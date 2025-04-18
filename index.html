@@ -1,19 +1,100 @@
-<head><script src="script.js"></script></head>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🎧 Dott</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      background: #111;
+      color: #fff;
+      text-align: center;
+      padding: 2rem;
+      overflow: hidden;
+    }
+    .bg-blur {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-position: center;
+      background-size: cover;
+      filter: blur(40px) brightness(0.3);
+      z-index: -1;
+      transition: background-image 1s ease-in-out;
+    }
+    .cover {
+      width: 300px;
+      height: 300px;
+      border-radius: 1rem;
+      margin-bottom: 1rem;
+      object-fit: cover;
+      box-shadow: 0 0 20px rgba(255,255,255,0.1);
+      transition: opacity 0.5s ease;
+    }
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+    #title {
+      font-size: 1.5rem;
+      font-weight: 400;
+      margin-bottom: 2rem;
+    }
+    audio {
+      outline: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-blur" id="bg"></div>
 
-<link rel="stylesheet" href="style.css">
+  <h1>🎵 Сейчас играет:</h1>
+  <img class="cover" id="cover" src="default.jpg" alt="Обложка" />
+  <h2 id="title">Загрузка...</h2>
+  <audio controls autoplay src="https://radio.somedott.space/hls/rap/live.m3u8"></audio>
 
+  <script>
+    let lastSongId = null;
 
-<div class="bg-blur" id="bg"></div>
+    async function fetchNowPlaying() {
+      try {
+        const res = await fetch("https://radio.somedott.space/api/nowplaying/rap");
+        const data = await res.json();
 
-<h1>🎵 Сейчас играет:</h1>
-<img class="cover" id="cover" src="default.jpg" alt="Обложка" />
-<h2 id="title">Загрузка...</h2>
+        const { song } = data.now_playing;
+        const songId = song.id;
+        const title = song.text;
+        const art = song.art || "default.jpg";
 
-<div class="player-controls">
-  <button id="playPause" class="btn">▶️ Воспроизвести</button>
-  <input type="range" id="volume" min="0" max="1" step="0.01" value="0.25" />
-</div>
+        if (songId !== lastSongId) {
+          document.getElementById("title").textContent = title;
 
-<audio id="audio" preload="none">
-  <source src="https://radio.somedott.space/hls/rap/live.m3u8" type="application/x-mpegURL" />
-</audio>
+          const coverImg = document.getElementById("cover");
+          coverImg.style.opacity = 0;
+          setTimeout(() => {
+            coverImg.src = art;
+            coverImg.style.opacity = 1;
+          }, 300);
+
+          // Смена background
+          document.getElementById("bg").style.backgroundImage = `url(${art})`;
+
+          lastSongId = songId;
+        }
+      } catch (e) {
+        console.error("Ошибка загрузки данных", e);
+      }
+    }
+
+    fetchNowPlaying();
+    setInterval(fetchNowPlaying, 10000);
+  </script>
+</body>
+</html>
